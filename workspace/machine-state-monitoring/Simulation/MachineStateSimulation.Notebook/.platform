@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "MachineStateSimulation",
+    "description": "Simulates a fleet of machines sending state-change events"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "f6a7b8c9-d0e1-2345-6789-abcdef012345"
+  }
+}

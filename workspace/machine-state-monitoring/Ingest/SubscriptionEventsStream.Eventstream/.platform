@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Eventstream",
+    "displayName": "SubscriptionEventsStream",
+    "description": "Ingests subscription and unsubscription events from the portal"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "d4e5f6a7-b8c9-0123-def0-1234567890ab"
+  }
+}

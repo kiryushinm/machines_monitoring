@@ -1,0 +1,65 @@
+// KQL script
+// Database schema for Machine Fleet State Monitoring solution
+
+
+// ============================================================================
+// Tables
+// ============================================================================
+
+// Raw telemetry from the machine fleet — each row is a state-change event
+.create-merge table MachineStateEvents (
+    timestamp: datetime,
+    machine_id: string,
+    state: string
+)
+
+// Every subscription change is a new row; the latest event per (user, machine, state) determines current state
+.create-merge table UserSubscriptions (
+    timestamp: datetime,
+    user_id: string,
+    user_email: string,
+    machine_id: string,
+    state: string,
+    duration_threshold_minutes: int,
+    action: string
+)
+
+
+// ============================================================================
+// Ingestion Mappings
+// ============================================================================
+
+.create-or-alter table MachineStateEvents ingestion json mapping 'MachineStateEvents_mapping'
+```
+[
+  {"column": "timestamp",  "path": "$.timestamp",  "datatype": ""},
+  {"column": "machine_id", "path": "$.machine_id", "datatype": ""},
+  {"column": "state",      "path": "$.state",      "datatype": ""}
+]
+```
+
+.create-or-alter table UserSubscriptions ingestion json mapping 'UserSubscriptions_mapping'
+```
+[
+  {"column": "timestamp",                  "path": "$.timestamp",                  "datatype": ""},
+  {"column": "user_id",                    "path": "$.user_id",                    "datatype": ""},
+  {"column": "user_email",                 "path": "$.user_email",                 "datatype": ""},
+  {"column": "machine_id",                 "path": "$.machine_id",                 "datatype": ""},
+  {"column": "state",                      "path": "$.state",                      "datatype": ""},
+  {"column": "duration_threshold_minutes", "path": "$.duration_threshold_minutes", "datatype": ""},
+  {"column": "action",                     "path": "$.action",                     "datatype": ""}
+]
+```
+
+
+// ============================================================================
+// Materialized View
+// ============================================================================
+
+// Maintains the current set of active subscriptions by resolving the latest event per subscription key
+.create materialized-view ActiveSubscriptions on table UserSubscriptions {
+    UserSubscriptions
+    | extend subscription_key = strcat(user_id, '|', machine_id, '|', state)
+    | summarize arg_max(timestamp, action, duration_threshold_minutes, user_email, user_id, machine_id, state) by subscription_key
+    | where action == "subscribe"
+}

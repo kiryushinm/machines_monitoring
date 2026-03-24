@@ -53,10 +53,10 @@ A real-time alerting solution built on Fabric Real-Time Intelligence that notifi
 
 Raw telemetry from the machine fleet.
 
-| Column       | Type   | Description                |
-|--------------|--------|----------------------------|
-| `timestamp`  | long   | Epoch timestamp of event   |
-| `machine_id` | guid   | Machine identifier         |
+| Column       | Type     | Description                |
+|--------------|----------|----------------------------|
+| `timestamp`  | datetime | Timestamp of event         |
+| `machine_id` | string   | Machine identifier         |
 | `state`      | string | One of: Ready, Stopped, Optional Stop, Program Stopped, Interrupted, Feed Hold, Disabled, Communication Lost, Unavailable |
 
 ### Table: `UserSubscriptions`
@@ -68,7 +68,7 @@ Every subscription change is a new row. The latest event per (user, machine, sta
 | `timestamp`        | datetime | When the change occurred                 |
 | `user_id`          | string   | User who made the change                 |
 | `user_email`       | string   | Notification target                      |
-| `machine_id`       | guid     | Target machine                           |
+| `machine_id`       | string   | Target machine                           |
 | `state`            | string   | Target execution state                   |
 | `duration_threshold_minutes` | int      | Threshold (5, 10, 60, 120, 360, 720, 1440) |
 | `action`           | string   | `"subscribe"` or `"unsubscribe"`         |
@@ -99,15 +99,14 @@ The Activator uses a **Becomes** condition on the `is_breached` column, which fi
 
 For this to work, the query must return a row for **every active subscription on every poll** (not just the breached ones), so the Activator always has an explicit `true` or `false` signal per object. The query achieves this as follows:
 
-1. **`machine_states`** — Computes the latest state and how long each machine has been in it. Uses `arg_max(timestamp, state)` to pick the most recent event per `machine_id`, then calculates `duration_min` as the time elapsed since that event.
+1. **`machine_states`** — Computes the latest state and how long each machine has been in it. Uses `arg_max(timestamp, state)` to pick the most recent event per `machine_id`, then calculates `duration_min` as the minutes elapsed since that event.
 
 2. **`leftouter` join** — Starts from `ActiveSubscriptions` (left side) and joins `machine_states` on `machine_id` only (not on state). This ensures **every active subscription produces a row on every poll**, even if the machine's current state doesn't match the subscribed state. The `is_breached` flag is then computed by comparing the subscribed `state` against `current_state` and checking the duration threshold. This guarantees the Activator receives explicit `true → false` transitions when a machine leaves a subscribed state, properly resetting the **Becomes** condition.
 
 ```kql
-let now_ts = tolong(datetime_diff('Millisecond', now(), datetime(1970-01-01)));
 let machine_states = MachineStateEvents
     | summarize arg_max(timestamp, state) by machine_id
-    | extend duration_min = (now_ts - timestamp) / 60000
+    | extend duration_min = datetime_diff('minute', now(), timestamp)
     | project machine_id, current_state = state, duration_min;
 ActiveSubscriptions
 | join kind=leftouter machine_states on machine_id
@@ -124,3 +123,88 @@ ActiveSubscriptions
 | **Action**     | Send Teams or Email notification to `user_email`                      |
 
 The **Becomes** condition ensures each subscription is alerted only once when the threshold is first crossed. If the machine later leaves the state and re-enters it, the condition resets and a new alert fires.
+
+## Prerequisites
+
+- **Microsoft Fabric Capacity**: F16 or higher recommended
+- **Fabric Workspace**: A workspace with contributor or admin permissions
+- Familiarity with Microsoft Fabric concepts (Eventhouses, Eventstreams) is helpful but not required
+
+## Installation Instructions
+
+### Step 1: Prepare Workspace
+
+1. Log in to [Microsoft Fabric](https://app.fabric.microsoft.com)
+2. Use an existing workspace or create a new one (e.g., "Machine State Monitoring")
+3. Ensure a Fabric capacity is assigned
+
+### Step 2: Install the Solution
+
+1. In your Fabric workspace, click **+ New** → **Notebook**
+2. Add the following code to two separate cells:
+
+```python
+%pip install fabric-launcher --quiet
+import notebookutils
+notebookutils.session.restartPython()
+```
+
+```python
+from fabric_launcher import FabricLauncher
+
+launcher = FabricLauncher(notebookutils)
+launcher.download_and_deploy(
+    repo_owner="makiryus_microsoft",
+    repo_name="machines_state_monitoring",
+    branch="main",
+    workspace_folder="workspace",
+    allow_non_empty_workspace=True,
+    item_type_stages=[
+        ["KQLDatabase", "Eventhouse"],
+        ["Notebook", "Eventstream", "Reflex"]
+    ],
+    validate_after_deployment=True,
+    generate_report=True
+)
+```
+
+3. Run the notebook — it will deploy all items and run the PostDeploymentConfig notebook automatically
+
+## Usage Instructions
+
+### Running the Machine State Simulation
+
+```
+Location: Simulation / MachineStateSimulation
+Duration: 2 hours (configurable)
+Data Generated: State-change events for 1000 machines every 10 seconds
+```
+
+1. Open the **MachineStateSimulation** notebook
+2. Set the `EVENT_HUB_CONNECTION_STRING` to the connection string from the **MachineEventsStream** Custom Endpoint (found in the Fabric portal under the Eventstream item)
+3. Click **Run all**
+4. Monitor progress in the output — status is printed every 5 minutes
+
+**Valid machine states**: Ready, Stopped, Optional Stop, Program Stopped, Interrupted, Feed Hold, Disabled, Communication Lost, Unavailable
+
+### Verifying Data Flow
+
+1. Navigate to **StoreAndQuery** → **MachineMonitoringEH** (Eventhouse)
+2. Open the KQL Database and run:
+
+```kql
+MachineStateEvents | take 10
+```
+
+3. Verify events are arriving with `timestamp`, `machine_id`, and `state` columns
+
+### Using the Activator
+
+The **MachineStateActivator** monitors all active subscriptions and sends alerts when machines exceed configured duration thresholds.
+
+Access: Navigate to **Act** → **MachineStateActivator**
+
+The Activator is pre-configured to:
+- Poll every 5 minutes
+- Fire when `is_breached` transitions from `false` to `true` for any subscription
+- Send Email notifications to the subscribed user's email address

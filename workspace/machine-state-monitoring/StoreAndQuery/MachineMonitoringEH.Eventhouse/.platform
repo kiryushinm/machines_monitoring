@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Eventhouse",
+    "displayName": "MachineMonitoringEH",
+    "description": "Eventhouse for machine fleet state monitoring"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  }
+}

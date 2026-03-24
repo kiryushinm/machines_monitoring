@@ -1,0 +1,53 @@
+{
+  "sources": [
+    {
+      "id": "44444444-4444-4444-4444-444444444444",
+      "name": "SubscriptionEventsSource",
+      "type": "CustomEndpoint",
+      "properties": {}
+    }
+  ],
+  "destinations": [
+    {
+      "id": "55555555-5555-5555-5555-555555555555",
+      "name": "MachineMonitoringEH",
+      "type": "KQLDatabase",
+      "properties": {
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "itemId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "databaseId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "tableName": "UserSubscriptions",
+        "mappingRuleName": "UserSubscriptions_mapping",
+        "inputSerialization": {
+          "type": "Json",
+          "properties": {
+            "encoding": "UTF8"
+          }
+        }
+      },
+      "inputNodes": [
+        {
+          "name": "SubscriptionEventsSource"
+        }
+      ],
+      "inputSchemas": [
+        {
+          "name": "SubscriptionEventsSource",
+          "schema": {
+            "columns": [
+              { "name": "timestamp",                  "type": "Datetime",      "fields": null, "items": null },
+              { "name": "user_id",                    "type": "Nvarchar(max)", "fields": null, "items": null },
+              { "name": "user_email",                 "type": "Nvarchar(max)", "fields": null, "items": null },
+              { "name": "machine_id",                 "type": "Nvarchar(max)", "fields": null, "items": null },
+              { "name": "state",                      "type": "Nvarchar(max)", "fields": null, "items": null },
+              { "name": "duration_threshold_minutes", "type": "BigInt",        "fields": null, "items": null },
+              { "name": "action",                     "type": "Nvarchar(max)", "fields": null, "items": null }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "operators": [],
+  "compatibilityLevel": "1.2"
+}

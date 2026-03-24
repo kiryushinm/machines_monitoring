@@ -1,0 +1,107 @@
+[
+  {
+    "uniqueIdentifier": "aaaa1111-bbbb-cccc-dddd-eeee11111111",
+    "payload": {
+      "name": "EventStream",
+      "metadata": {
+        "eventstreamArtifactId": "c3d4e5f6-a7b8-9012-cdef-123456789012"
+      }
+    },
+    "type": "eventstreamSource-v1"
+  },
+  {
+    "uniqueIdentifier": "aaaa2222-bbbb-cccc-dddd-eeee22222222",
+    "payload": {
+      "name": "MachineEventsStream-stream",
+      "definition": {
+        "type": "Event",
+        "instance": "{\"templateId\":\"SourceEvent\",\"templateVersion\":\"1.1\",\"steps\":[{\"name\":\"SourceEventStep\",\"id\":\"aaaa3333-bbbb-cccc-dddd-eeee33333333\",\"rows\":[{\"name\":\"SourceSelector\",\"kind\":\"SourceReference\",\"arguments\":[{\"name\":\"entityId\",\"type\":\"string\",\"value\":\"aaaa1111-bbbb-cccc-dddd-eeee11111111\"}]}]}]}"
+      }
+    },
+    "type": "timeSeriesView-v1"
+  },
+  {
+    "uniqueIdentifier": "aaaa4444-bbbb-cccc-dddd-eeee44444444",
+    "payload": {
+      "name": "Machine",
+      "definition": {
+        "type": "Object"
+      }
+    },
+    "type": "timeSeriesView-v1"
+  },
+  {
+    "uniqueIdentifier": "aaaa5555-bbbb-cccc-dddd-eeee55555555",
+    "payload": {
+      "name": "subscription_key",
+      "parentObject": {
+        "targetUniqueIdentifier": "aaaa4444-bbbb-cccc-dddd-eeee44444444"
+      },
+      "definition": {
+        "type": "Attribute",
+        "instance": "{\"steps\":[{\"id\":\"aaaa6666-bbbb-cccc-dddd-eeee66666666\",\"name\":\"IdPartStep\",\"rows\":[{\"arguments\":[{\"name\":\"op\",\"type\":\"string\",\"value\":\"Text\"},{\"name\":\"format\",\"type\":\"string\",\"value\":\"\"}],\"kind\":\"TypeAssertion\",\"name\":\"TypeAssertion\"}]}],\"templateId\":\"IdentityPartAttribute\",\"templateVersion\":\"1.2.3\"}"
+      }
+    },
+    "type": "timeSeriesView-v1"
+  },
+  {
+    "uniqueIdentifier": "aaaa7777-bbbb-cccc-dddd-eeee77777777",
+    "payload": {
+      "name": "subscription_key",
+      "parentObject": {
+        "targetUniqueIdentifier": "aaaa4444-bbbb-cccc-dddd-eeee44444444"
+      },
+      "definition": {
+        "type": "Attribute",
+        "instance": "{\"steps\":[{\"id\":\"aaaa8888-bbbb-cccc-dddd-eeee88888888\",\"name\":\"IdStructureStep\",\"rows\":[{\"arguments\":[{\"arguments\":[{\"name\":\"entityId\",\"type\":\"string\",\"value\":\"aaaa5555-bbbb-cccc-dddd-eeee55555555\"}],\"kind\":\"AttributeReference\",\"name\":\"idPart\",\"type\":\"complex\"}],\"kind\":\"IdPart\",\"name\":\"IdPart\"}]}],\"templateId\":\"IdentityTupleAttribute\",\"templateVersion\":\"1.2.3\"}"
+      }
+    },
+    "type": "timeSeriesView-v1"
+  },
+  {
+    "uniqueIdentifier": "aaaa9999-bbbb-cccc-dddd-eeee99999999",
+    "payload": {
+      "name": "MachineEventsStream-stream",
+      "parentObject": {
+        "targetUniqueIdentifier": "aaaa4444-bbbb-cccc-dddd-eeee44444444"
+      },
+      "definition": {
+        "type": "Event",
+        "instance": "{\"steps\":[{\"id\":\"aaaabbbb-bbbb-cccc-dddd-eeeeffff0000\",\"name\":\"SplitEventStep\",\"rows\":[{\"arguments\":[{\"arguments\":[{\"name\":\"entityId\",\"type\":\"string\",\"value\":\"aaaa2222-bbbb-cccc-dddd-eeee22222222\"}],\"kind\":\"EventReference\",\"name\":\"event\",\"type\":\"complex\"}],\"kind\":\"Event\",\"name\":\"EventSelector\"},{\"arguments\":[{\"name\":\"fieldName\",\"type\":\"string\",\"value\":\"subscription_key\"},{\"arguments\":[{\"name\":\"entityId\",\"type\":\"string\",\"value\":\"aaaa5555-bbbb-cccc-dddd-eeee55555555\"}],\"kind\":\"AttributeReference\",\"name\":\"idPart\",\"type\":\"complex\"}],\"kind\":\"FieldIdMapping\",\"name\":\"FieldIdMapping\"},{\"arguments\":[{\"name\":\"isAuthoritative\",\"type\":\"boolean\",\"value\":true}],\"kind\":\"EventOptions\",\"name\":\"SplitEventOptions\"}]}],\"templateId\":\"SplitEvent\",\"templateVersion\":\"1.2.3\"}"
+      }
+    },
+    "type": "timeSeriesView-v1"
+  },
+  {
+    "uniqueIdentifier": "bbbb1111-cccc-dddd-eeee-ffff11111111",
+    "payload": {
+      "name": "is_breached",
+      "parentObject": {
+        "targetUniqueIdentifier": "aaaa4444-bbbb-cccc-dddd-eeee44444444"
+      },
+      "definition": {
+        "type": "Attribute",
+        "instance": "{\"steps\":[{\"id\":\"bbbb2222-cccc-dddd-eeee-ffff22222222\",\"name\":\"EventSelectStep\",\"rows\":[{\"arguments\":[{\"arguments\":[{\"name\":\"entityId\",\"type\":\"string\",\"value\":\"aaaa9999-bbbb-cccc-dddd-eeee99999999\"}],\"kind\":\"EventReference\",\"name\":\"event\",\"type\":\"complex\"}],\"kind\":\"Event\",\"name\":\"EventSelector\"},{\"arguments\":[{\"name\":\"fieldName\",\"type\":\"string\",\"value\":\"is_breached\"}],\"kind\":\"EventField\",\"name\":\"EventFieldSelector\"}]},{\"id\":\"bbbb3333-cccc-dddd-eeee-ffff33333333\",\"name\":\"EventComputeStep\",\"rows\":[{\"arguments\":[{\"name\":\"op\",\"type\":\"string\",\"value\":\"Boolean\"},{\"name\":\"format\",\"type\":\"string\",\"value\":\"\"}],\"kind\":\"TypeAssertion\",\"name\":\"TypeAssertion\"}]}],\"templateId\":\"BasicEventAttribute\",\"templateVersion\":\"1.2.3\"}"
+      }
+    },
+    "type": "timeSeriesView-v1"
+  },
+  {
+    "uniqueIdentifier": "bbbb4444-cccc-dddd-eeee-ffff44444444",
+    "payload": {
+      "name": "threshold breach alert",
+      "parentObject": {
+        "targetUniqueIdentifier": "aaaa4444-bbbb-cccc-dddd-eeee44444444"
+      },
+      "definition": {
+        "type": "Rule",
+        "instance": "{\"steps\":[{\"id\":\"bbbb5555-cccc-dddd-eeee-ffff55555555\",\"name\":\"ScalarSelectStep\",\"rows\":[{\"arguments\":[{\"arguments\":[{\"name\":\"entityId\",\"type\":\"string\",\"value\":\"bbbb1111-cccc-dddd-eeee-ffff11111111\"}],\"kind\":\"AttributeReference\",\"name\":\"attribute\",\"type\":\"complex\"}],\"kind\":\"Attribute\",\"name\":\"AttributeSelector\"}]},{\"id\":\"bbbb6666-cccc-dddd-eeee-ffff66666666\",\"name\":\"ScalarDetectStep\",\"rows\":[{\"arguments\":[{\"name\":\"op\",\"type\":\"string\",\"value\":\"Becomes\"},{\"name\":\"value\",\"type\":\"boolean\",\"value\":true}],\"kind\":\"BooleanBecomes\",\"name\":\"BooleanBecomes\"}]},{\"id\":\"bbbb7777-cccc-dddd-eeee-ffff77777777\",\"name\":\"ActStep\",\"rows\":[{\"arguments\":[{\"name\":\"messageLocale\",\"type\":\"string\",\"value\":\"en-us\"},{\"name\":\"sentTo\",\"type\":\"array\",\"values\":[{\"type\":\"string\",\"value\":\"{{user_email}}\"}]},{\"name\":\"copyTo\",\"type\":\"array\",\"values\":[]},{\"name\":\"bCCTo\",\"type\":\"array\",\"values\":[]},{\"name\":\"subject\",\"type\":\"array\",\"values\":[{\"type\":\"string\",\"value\":\"Machine State Alert — Threshold Breached\"}]},{\"name\":\"headline\",\"type\":\"array\",\"values\":[{\"name\":\"string\",\"type\":\"string\",\"value\":\"A machine has remained in the subscribed state beyond the configured duration threshold.\"}]},{\"name\":\"optionalMessage\",\"type\":\"array\",\"values\":[{\"type\":\"string\",\"value\":\"\"}]},{\"name\":\"additionalInformation\",\"type\":\"array\",\"values\":[]}],\"kind\":\"EmailMessage\",\"name\":\"EmailBinding\"}]}],\"templateId\":\"AttributeTrigger\",\"templateVersion\":\"1.2.3\"}",
+        "settings": {
+          "shouldRun": true,
+          "shouldApplyRuleOnUpdate": false
+        }
+      }
+    },
+    "type": "timeSeriesView-v1"
+  }
+]
