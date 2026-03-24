@@ -4,6 +4,18 @@
 
 A real-time alerting solution built on Fabric Real-Time Intelligence that notifies users when machines remain in a specific state beyond a configured duration threshold.
 
+## Scenario
+
+1. A fleet of machines sends events whenever a machine's state changes. Each event contains a timestamp, machine ID, and the new state.
+
+2. Machine operators can subscribe to execution status of individual machines through a portal where they can:
+   - Specify a list of machine IDs they are interested in
+   - Select execution states to monitor, each with a duration chosen from a predefined list
+
+   The operator is notified whenever a machine enters and then remains in the selected state beyond the configured duration.
+
+3. Machine operators can unsubscribe from previously created alerts.
+
 ### Components
 
 ```
