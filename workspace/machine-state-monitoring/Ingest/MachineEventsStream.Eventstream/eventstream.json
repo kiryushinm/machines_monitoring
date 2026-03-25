@@ -7,7 +7,39 @@
       "properties": {}
     }
   ],
-  "destinations": [],
+  "destinations": [
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "name": "Eventhouse",
+      "type": "Eventhouse",
+      "properties": {
+        "dataIngestionMode": "ProcessedIngestion",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "itemId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "databaseName": "MachineMonitoringEH",
+        "tableName": "MachineStateEvents",
+        "inputSerialization": {
+          "type": "Json",
+          "properties": {
+            "encoding": "UTF8"
+          }
+        }
+      },
+      "inputNodes": [
+        {
+          "name": "MachineEventsStream-stream"
+        }
+      ],
+      "inputSchemas": [
+        {
+          "name": "MachineEventsStream-stream",
+          "schema": {
+            "columns": []
+          }
+        }
+      ]
+    }
+  ],
   "streams": [
     {
       "id": "33333333-3333-3333-3333-333333333333",
@@ -22,5 +54,5 @@
     }
   ],
   "operators": [],
-  "compatibilityLevel": 2
+  "compatibilityLevel": "1.1"
 }

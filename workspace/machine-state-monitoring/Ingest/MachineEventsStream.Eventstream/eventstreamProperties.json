@@ -1,4 +1,4 @@
 {
-  "isDefault": true,
-  "type": "default"
+  "retentionTimeInDays": 1,
+  "eventThroughputLevel": "Low"
 }

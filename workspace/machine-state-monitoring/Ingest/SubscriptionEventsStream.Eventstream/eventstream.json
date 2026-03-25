@@ -7,7 +7,39 @@
       "properties": {}
     }
   ],
-  "destinations": [],
+  "destinations": [
+    {
+      "id": "55555555-5555-5555-5555-555555555555",
+      "name": "Eventhouse",
+      "type": "Eventhouse",
+      "properties": {
+        "dataIngestionMode": "ProcessedIngestion",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "itemId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "databaseName": "MachineMonitoringEH",
+        "tableName": "UserSubscriptions",
+        "inputSerialization": {
+          "type": "Json",
+          "properties": {
+            "encoding": "UTF8"
+          }
+        }
+      },
+      "inputNodes": [
+        {
+          "name": "SubscriptionEventsStream-stream"
+        }
+      ],
+      "inputSchemas": [
+        {
+          "name": "SubscriptionEventsStream-stream",
+          "schema": {
+            "columns": []
+          }
+        }
+      ]
+    }
+  ],
   "streams": [
     {
       "id": "66666666-6666-6666-6666-666666666666",
@@ -22,5 +54,5 @@
     }
   ],
   "operators": [],
-  "compatibilityLevel": 2
+  "compatibilityLevel": "1.1"
 }
