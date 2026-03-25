@@ -14,9 +14,7 @@
 # # Post-Deployment Configuration
 # 
 # Run this notebook after the Solution Installer has deployed all Fabric items.
-# It performs the following tasks:
-# 1. Validates Eventhouse connectivity
-# 2. Seeds sample subscription data for demo purposes
+# It validates Eventhouse connectivity.
 
 # CELL ********************
 
@@ -54,68 +52,6 @@ result = exec_kql_command(
 )
 print("Tables found:")
 print(result)
-
-# MARKDOWN ********************
-
-# ## 2. Seed Sample Subscription Data
-# 
-# Inserts a few sample subscriptions so the Activator has data to work with
-# during a demo. These can be removed later.
-
-# CELL ********************
-
-import json
-from datetime import datetime, timezone
-
-sample_subscriptions = [
-    {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "user_id": "demo-operator-1",
-        "user_email": "operator1@contoso.com",
-        "machine_id": "MACHINE-0001",
-        "state": "Stopped",
-        "duration_threshold_minutes": 10,
-        "action": "subscribe",
-    },
-    {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "user_id": "demo-operator-1",
-        "user_email": "operator1@contoso.com",
-        "machine_id": "MACHINE-0002",
-        "state": "Communication Lost",
-        "duration_threshold_minutes": 5,
-        "action": "subscribe",
-    },
-    {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "user_id": "demo-operator-2",
-        "user_email": "operator2@contoso.com",
-        "machine_id": "MACHINE-0005",
-        "state": "Interrupted",
-        "duration_threshold_minutes": 60,
-        "action": "subscribe",
-    },
-]
-
-# Ingest sample subscriptions into UserSubscriptions table
-ingest_commands = []
-for sub in sample_subscriptions:
-    cols = ", ".join(f"'{v}'" if isinstance(v, str) else str(v) for v in [
-        sub["timestamp"], sub["user_id"], sub["user_email"],
-        sub["machine_id"], sub["state"], sub["duration_threshold_minutes"],
-        sub["action"],
-    ])
-    ingest_commands.append(
-        f".ingest inline into table UserSubscriptions <| {cols}"
-    )
-
-for cmd in ingest_commands:
-    try:
-        exec_kql_command(kusto_query_uri, kql_db_name, cmd, notebookutils)
-    except Exception as e:
-        print(f"Warning: {e}")
-
-print(f"Seeded {len(sample_subscriptions)} sample subscriptions.")
 
 # MARKDOWN ********************
 
