@@ -42,38 +42,6 @@
           }
         }
       ]
-    },
-    {
-      "id": "33333333-3333-3333-3333-333333333333",
-      "name": "MachineStateActivator",
-      "type": "Activator",
-      "properties": {
-        "workspaceId": "00000000-0000-0000-0000-000000000000",
-        "itemId": "e5f6a7b8-c9d0-1234-5678-9abcdef01234",
-        "inputSerialization": {
-          "type": "Json",
-          "properties": {
-            "encoding": "UTF8"
-          }
-        }
-      },
-      "inputNodes": [
-        {
-          "name": "MachineEventsSource"
-        }
-      ],
-      "inputSchemas": [
-        {
-          "name": "MachineEventsSource",
-          "schema": {
-            "columns": [
-              { "name": "timestamp",  "type": "Datetime",      "fields": null, "items": null },
-              { "name": "machine_id", "type": "Nvarchar(max)", "fields": null, "items": null },
-              { "name": "state",      "type": "Nvarchar(max)", "fields": null, "items": null }
-            ]
-          }
-        }
-      ]
     }
   ],
   "operators": [],
