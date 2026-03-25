@@ -27,12 +27,12 @@
       },
       "inputNodes": [
         {
-          "name": "SubscriptionEventsSource"
+          "name": "SubscriptionEventsStream-stream"
         }
       ],
       "inputSchemas": [
         {
-          "name": "SubscriptionEventsSource",
+          "name": "SubscriptionEventsStream-stream",
           "schema": {
             "columns": [
               { "name": "timestamp",                  "type": "Datetime",      "fields": null, "items": null },
@@ -44,6 +44,19 @@
               { "name": "action",                     "type": "Nvarchar(max)", "fields": null, "items": null }
             ]
           }
+        }
+      ]
+    }
+  ],
+  "streams": [
+    {
+      "id": "66666666-6666-6666-6666-666666666666",
+      "name": "SubscriptionEventsStream-stream",
+      "type": "DefaultStream",
+      "properties": {},
+      "inputNodes": [
+        {
+          "name": "SubscriptionEventsSource"
         }
       ]
     }

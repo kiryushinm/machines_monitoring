@@ -27,12 +27,12 @@
       },
       "inputNodes": [
         {
-          "name": "MachineEventsSource"
+          "name": "MachineEventsStream-stream"
         }
       ],
       "inputSchemas": [
         {
-          "name": "MachineEventsSource",
+          "name": "MachineEventsStream-stream",
           "schema": {
             "columns": [
               { "name": "timestamp",  "type": "Datetime",      "fields": null, "items": null },
@@ -40,6 +40,19 @@
               { "name": "state",      "type": "Nvarchar(max)", "fields": null, "items": null }
             ]
           }
+        }
+      ]
+    }
+  ],
+  "streams": [
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "name": "MachineEventsStream-stream",
+      "type": "DefaultStream",
+      "properties": {},
+      "inputNodes": [
+        {
+          "name": "MachineEventsSource"
         }
       ]
     }
