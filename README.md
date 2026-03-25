@@ -140,18 +140,24 @@ The **Becomes** condition ensures each subscription is alerted only once when th
 ### Step 2: Install the Solution
 
 1. In your Fabric workspace, click **+ New** → **Notebook**
-2. Add the following code to two separate cells:
+2. Add the following code to three separate cells:
 
+**Cell 1** — Install dependencies and restart Python:
 ```python
 %pip install fabric-launcher --quiet
 import notebookutils
 notebookutils.session.restartPython()
 ```
 
+**Cell 2** — Deploy all Fabric items (for private repos, add `github_token` parameter):
 ```python
 from fabric_launcher import FabricLauncher
 
-launcher = FabricLauncher(notebookutils)
+launcher = FabricLauncher(
+    notebookutils,
+    api_root_url="https://api.fabric.microsoft.com"
+)
+
 launcher.download_and_deploy(
     repo_owner="makiryus_microsoft",
     repo_name="machines_state_monitoring",
@@ -160,14 +166,17 @@ launcher.download_and_deploy(
     allow_non_empty_workspace=True,
     item_type_stages=[
         ["KQLDatabase", "Eventhouse"],
-        ["Notebook", "Eventstream", "Reflex"]
+        ["Notebook", "Eventstream"],
+        ["Reflex"]
     ],
     validate_after_deployment=True,
-    generate_report=True
+    generate_report=True,
+    github_token="<YOUR_GITHUB_PAT>"  # Required for private repos; remove for public repos
 )
 ```
 
-3. Run the notebook — it will deploy all items and run the PostDeploymentConfig notebook automatically
+3. Run Cell 1 first, wait for the Python session to restart, then run Cell 2
+4. If the Eventhouse shows a "not available yet" error, wait 2–3 minutes and re-run Cell 2
 
 ## Usage Instructions
 
