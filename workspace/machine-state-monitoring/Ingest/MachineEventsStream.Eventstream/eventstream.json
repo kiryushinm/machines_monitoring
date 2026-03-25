@@ -10,14 +10,14 @@
   "destinations": [
     {
       "id": "22222222-2222-2222-2222-222222222222",
-      "name": "MachineMonitoringEH",
-      "type": "KQLDatabase",
+      "name": "Eventhouse",
+      "type": "Eventhouse",
       "properties": {
+        "dataIngestionMode": "ProcessedIngestion",
         "workspaceId": "00000000-0000-0000-0000-000000000000",
         "itemId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-        "databaseId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "databaseName": "MachineMonitoringEH",
         "tableName": "MachineStateEvents",
-        "mappingRuleName": "MachineStateEvents_mapping",
         "inputSerialization": {
           "type": "Json",
           "properties": {
@@ -35,7 +35,7 @@
           "name": "MachineEventsSource",
           "schema": {
             "columns": [
-              { "name": "timestamp",  "type": "Datetime",     "fields": null, "items": null },
+              { "name": "timestamp",  "type": "Datetime",      "fields": null, "items": null },
               { "name": "machine_id", "type": "Nvarchar(max)", "fields": null, "items": null },
               { "name": "state",      "type": "Nvarchar(max)", "fields": null, "items": null }
             ]
