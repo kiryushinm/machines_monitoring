@@ -43,8 +43,8 @@ A real-time alerting solution built on Fabric Real-Time Intelligence that notifi
 
 1. **Machine Fleet → Eventstream (events)** — Machines emit state-change events (timestamp, machine_id, state) ingested via Custom Endpoint or Event Hub.
 2. **Portal → Eventstream (subs)** — Users manage alert subscriptions through a web portal; each change is appended as an event.
-3. **Eventstreams → Eventhouse** — Both streams land in their respective KQL tables.
-4. **Activator → Eventhouse** — Polls a KQL query every 5 minutes to detect threshold breaches.
+3. **Eventstreams → Eventhouse** — Both streams use Direct Ingestion mode to land data in their respective KQL tables.
+4. **Activator → Eventhouse** — Polls a KQL query every 60 seconds to detect threshold breaches.
 5. **Activator → Teams / Email** — Sends notifications to subscribed users.
 
 ## Eventhouse Schema
@@ -88,7 +88,7 @@ Maintains the latest subscription event per subscription key (user, machine, sta
 
 ### Trigger Query
 
-Polls every 5 minutes. Each subscription is tracked as a distinct object via a compound `subscription_key`.
+Polls every 60 seconds. Each subscription is tracked as a distinct object via a compound `subscription_key`.
 
 The Activator uses a **Becomes** condition on the `is_breached` column, which fires only when the value transitions from `false` to `true` for a given `subscription_key`. This means:
 - An alert fires **once** when a machine first exceeds the subscribed duration threshold.
@@ -118,10 +118,10 @@ SubscriptionsState
 | Setting        | Value                                                                 |
 |----------------|-----------------------------------------------------------------------|
 | **Object ID**  | `subscription_key` — compound key of `user_id`, `machine_id`, `state` |
-| **Condition**  | **Becomes** — monitors `is_breached`, fires only on the false → true transition per object |
-| **Action**     | Send Teams or Email notification to `user_email`                      |
+| **Condition**  | **ChangesTo 1** — monitors `is_breached` (Number), fires when the value changes to `1` per object |
+| **Action**     | Send Email notification to `user_email` with `machine_id`, `state`, `duration_min`, `duration_threshold_minutes` |
 
-The **Becomes** condition ensures each subscription is alerted only once when the threshold is first crossed. If the machine later leaves the state and re-enters it, the condition resets and a new alert fires.
+The **ChangesTo** condition ensures each subscription is alerted only once when the threshold is first crossed. If the machine later leaves the state and re-enters it, the condition resets and a new alert fires.
 
 ## Prerequisites
 
@@ -213,8 +213,8 @@ The **MachineStateActivator** monitors all active subscriptions and sends alerts
 Access: Navigate to **Act** → **MachineStateActivator**
 
 The Activator is pre-configured to:
-- Poll the Eventhouse KQL database every 5 minutes
-- Fire when `is_breached` transitions from `false` to `true` for any subscription
-- Send Email notifications to the subscribed user's email address
+- Poll the Eventhouse KQL database every 60 seconds
+- Fire when `is_breached` changes to `1` for any subscription
+- Send Email notifications to the subscribed user's email address with machine_id, state, and duration details
 
 > **Note:** After a fresh deployment, the Activator's Eventhouse connection (workspace and item IDs in `ReflexEntities.json`) may need to be reconfigured in the Fabric portal to point at the newly created Eventhouse.

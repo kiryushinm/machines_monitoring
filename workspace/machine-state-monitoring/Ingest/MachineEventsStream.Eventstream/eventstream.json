@@ -9,21 +9,16 @@
   ],
   "destinations": [
     {
-      "id": "22222222-2222-2222-2222-222222222222",
+      "id": "b705dd98-d219-47a0-9748-73b270f6aff5",
       "name": "Eventhouse",
       "type": "Eventhouse",
       "properties": {
-        "dataIngestionMode": "ProcessedIngestion",
-        "workspaceId": "00000000-0000-0000-0000-000000000000",
-        "itemId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-        "databaseName": "MachineMonitoringEH",
+        "dataIngestionMode": "DirectIngestion",
+        "workspaceId": "10369e6d-7c2d-4a0e-97aa-0f86a768cee3",
+        "itemId": "2906f9ac-34c3-4888-9e5d-8f57e6200409",
         "tableName": "MachineStateEvents",
-        "inputSerialization": {
-          "type": "Json",
-          "properties": {
-            "encoding": "UTF8"
-          }
-        }
+        "connectionName": "MachineEventsStream_6gqr3v",
+        "mappingRuleName": "MachineStateEvents_mapping_1"
       },
       "inputNodes": [
         {
@@ -34,7 +29,26 @@
         {
           "name": "MachineEventsStream-stream",
           "schema": {
-            "columns": []
+            "columns": [
+              {
+                "name": "timestamp",
+                "type": "Nvarchar(max)",
+                "fields": null,
+                "items": null
+              },
+              {
+                "name": "machine_id",
+                "type": "Nvarchar(max)",
+                "fields": null,
+                "items": null
+              },
+              {
+                "name": "state",
+                "type": "Nvarchar(max)",
+                "fields": null,
+                "items": null
+              }
+            ]
           }
         }
       ]
