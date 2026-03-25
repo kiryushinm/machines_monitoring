@@ -75,14 +75,12 @@ Every subscription change is a new row. The latest event per (user, machine, sta
 
 ### Materialized View: `ActiveSubscriptions`
 
-Maintains the current set of active subscriptions by resolving the latest event per subscription key (user, machine, state)
+Maintains the latest subscription event per subscription key (user, machine, state). The `where action == "subscribe"` filter is applied at query time (in the Activator query) rather than in the view itself.
 
 ```kql
-.create materialized-view ActiveSubscriptions on table UserSubscriptions {
+.create-or-alter materialized-view ActiveSubscriptions on table UserSubscriptions {
     UserSubscriptions
-    | extend subscription_key = strcat(user_id, '|', machine_id, '|', state)
-    | summarize arg_max(timestamp, action, duration_threshold_minutes, user_email, user_id, machine_id, state) by subscription_key
-    | where action == "subscribe"
+    | summarize arg_max(timestamp, action, duration_threshold_minutes, user_email, user_id, machine_id, state) by subscription_key = strcat(user_id, '|', machine_id, '|', state)
 }
 ```
 
@@ -109,6 +107,7 @@ let machine_states = MachineStateEvents
     | extend duration_min = datetime_diff('minute', now(), timestamp)
     | project machine_id, current_state = state, duration_min;
 ActiveSubscriptions
+| where action == "subscribe"
 | join kind=leftouter machine_states on machine_id
 | extend is_breached = (current_state == state and duration_min >= duration_threshold_minutes)
 | project subscription_key, machine_id, state, current_state, duration_min, user_email, duration_threshold_minutes, is_breached
