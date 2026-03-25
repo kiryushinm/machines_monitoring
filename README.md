@@ -213,6 +213,8 @@ The **MachineStateActivator** monitors all active subscriptions and sends alerts
 Access: Navigate to **Act** → **MachineStateActivator**
 
 The Activator is pre-configured to:
-- Poll every 5 minutes
+- Poll the Eventhouse KQL database every 5 minutes
 - Fire when `is_breached` transitions from `false` to `true` for any subscription
 - Send Email notifications to the subscribed user's email address
+
+> **Note:** After a fresh deployment, the Activator's Eventhouse connection (workspace and item IDs in `ReflexEntities.json`) may need to be reconfigured in the Fabric portal to point at the newly created Eventhouse.
