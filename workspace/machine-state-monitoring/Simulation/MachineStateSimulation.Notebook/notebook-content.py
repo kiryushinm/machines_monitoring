@@ -23,6 +23,10 @@
 
 # CELL ********************
 
+%pip install azure-eventhub --quiet
+
+# CELL ********************
+
 # Configuration
 NUM_MACHINES = 1000
 SIMULATION_DURATION_MINUTES = 120
