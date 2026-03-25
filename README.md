@@ -27,7 +27,7 @@ A real-time alerting solution built on Fabric Real-Time Intelligence that notifi
 ┌──────────┐    ┌─────────────┐    │  UserSubscriptions         │
 │ Portal   │──▶│ Eventstream │──▶ │                            │
 │ (Web UI) │    │ (subs)      │    │                            │
-└──────────┘    └─────────────┘    │  ActiveSubscriptions       │
+└──────────┘    └─────────────┘    │  SubscriptionsState        │
                                    │    (materialized view)     │
                                    └─────────────┬──────────────┘
                                                  │ KQL poll
@@ -73,12 +73,12 @@ Every subscription change is a new row. The latest event per (user, machine, sta
 | `duration_threshold_minutes` | int      | Threshold (5, 10, 60, 120, 360, 720, 1440) |
 | `action`           | string   | `"subscribe"` or `"unsubscribe"`         |
 
-### Materialized View: `ActiveSubscriptions`
+### Materialized View: `SubscriptionsState`
 
 Maintains the latest subscription event per subscription key (user, machine, state). The `where action == "subscribe"` filter is applied at query time (in the Activator query) rather than in the view itself.
 
 ```kql
-.create-or-alter materialized-view ActiveSubscriptions on table UserSubscriptions {
+.create-or-alter materialized-view SubscriptionsState on table UserSubscriptions {
     UserSubscriptions
     | summarize arg_max(timestamp, action, duration_threshold_minutes, user_email, user_id, machine_id, state) by subscription_key = strcat(user_id, '|', machine_id, '|', state)
 }
@@ -99,14 +99,14 @@ For this to work, the query must return a row for **every active subscription on
 
 1. **`machine_states`** — Computes the latest state and how long each machine has been in it. Uses `arg_max(timestamp, state)` to pick the most recent event per `machine_id`, then calculates `duration_min` as the minutes elapsed since that event.
 
-2. **`leftouter` join** — Starts from `ActiveSubscriptions` (left side) and joins `machine_states` on `machine_id` only (not on state). This ensures **every active subscription produces a row on every poll**, even if the machine's current state doesn't match the subscribed state. The `is_breached` flag is then computed by comparing the subscribed `state` against `current_state` and checking the duration threshold. This guarantees the Activator receives explicit `true → false` transitions when a machine leaves a subscribed state, properly resetting the **Becomes** condition.
+2. **`leftouter` join** — Starts from `SubscriptionsState` (left side) and joins `machine_states` on `machine_id` only (not on state). This ensures **every active subscription produces a row on every poll**, even if the machine's current state doesn't match the subscribed state. The `is_breached` flag is then computed by comparing the subscribed `state` against `current_state` and checking the duration threshold. This guarantees the Activator receives explicit `true → false` transitions when a machine leaves a subscribed state, properly resetting the **Becomes** condition.
 
 ```kql
 let machine_states = MachineStateEvents
     | summarize arg_max(timestamp, state) by machine_id
     | extend duration_min = datetime_diff('minute', now(), timestamp)
     | project machine_id, current_state = state, duration_min;
-ActiveSubscriptions
+SubscriptionsState
 | where action == "subscribe"
 | join kind=leftouter machine_states on machine_id
 | extend is_breached = (current_state == state and duration_min >= duration_threshold_minutes)

@@ -58,7 +58,7 @@
 
 // Maintains the latest subscription event per subscription key.
 // Filter with "| where action == 'subscribe'" at query time to get only active subscriptions.
-.create-or-alter materialized-view ActiveSubscriptions on table UserSubscriptions {
+.create-or-alter materialized-view SubscriptionsState on table UserSubscriptions {
     UserSubscriptions
     | summarize arg_max(timestamp, action, duration_threshold_minutes, user_email, user_id, machine_id, state) by subscription_key = strcat(user_id, '|', machine_id, '|', state)
 }
