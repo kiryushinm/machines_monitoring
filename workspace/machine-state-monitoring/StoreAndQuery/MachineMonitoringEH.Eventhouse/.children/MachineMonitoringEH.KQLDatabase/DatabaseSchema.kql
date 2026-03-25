@@ -57,7 +57,7 @@
 // ============================================================================
 
 // Maintains the current set of active subscriptions by resolving the latest event per subscription key
-.create materialized-view ActiveSubscriptions on table UserSubscriptions {
+.create-or-alter materialized-view ActiveSubscriptions on table UserSubscriptions {
     UserSubscriptions
     | extend subscription_key = strcat(user_id, '|', machine_id, '|', state)
     | summarize arg_max(timestamp, action, duration_threshold_minutes, user_email, user_id, machine_id, state) by subscription_key
