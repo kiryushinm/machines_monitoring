@@ -4,16 +4,16 @@
     "dataSources": [
       {
         "id": "79d011a8-cf36-4f8e-96fb-fbaeea11ef08",
-        "clusterUri": "https://trd-0m71vtm04uj4j548mr.z8.kusto.fabric.microsoft.com",
+        "clusterUri": "",
         "type": "Fabric",
-        "databaseItemId": "2906f9ac-34c3-4888-9e5d-8f57e6200409",
+        "databaseItemId": "00000000-0000-0000-0000-000000000000",
         "databaseItemName": "MachineMonitoringEH"
       }
     ],
     "tabs": [
       {
         "id": "f3214ee5-b51c-40ab-bd42-971282d41e0e",
-        "content": "MachineStateEvents\n| take 100\n\nUserSubscriptions | take 100\n\nlet machine_states = MachineStateEvents\n    | summarize arg_max(timestamp, state) by machine_id\n    | extend duration_min = datetime_diff('minute', now(), timestamp)\n    | project machine_id, current_state = state, duration_min;\nSubscriptionsState\n| where action == \"subscribe\"\n| join kind=leftouter machine_states on machine_id\n| extend is_breached = (current_state == state and duration_min >= duration_threshold_minutes)\n| project subscription_key, machine_id, state, current_state, duration_min, user_email, duration_threshold_minutes, is_breached",
+        "content": "let machine_states = MachineStateEvents\n    | summarize arg_max(timestamp, state) by machine_id\n    | extend duration_min = datetime_diff('minute', now(), timestamp)\n    | project machine_id, current_state = state, duration_min;\nSubscriptionsState\n| where action == \"subscribe\"\n| join kind=leftouter machine_states on machine_id\n| extend is_breached = (current_state == state and duration_min >= duration_threshold_minutes)\n| project subscription_key, machine_id, state, current_state, duration_min, user_email, duration_threshold_minutes, is_breached",
         "title": "Tab",
         "dataSourceId": "79d011a8-cf36-4f8e-96fb-fbaeea11ef08"
       }
