@@ -140,6 +140,10 @@ else:
 # CELL ********************
 
 import json, base64
+import sempy.fabric as fabric
+
+client = fabric.FabricRestClient()
+workspace_id = fabric.get_workspace_id()
 
 activator_name = "MachineStateActivator"
 queryset_name = "SubscriptionsMonitoringKQL"
