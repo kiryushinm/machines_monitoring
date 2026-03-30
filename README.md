@@ -197,54 +197,15 @@ To find a connection string: open the Eventstream item in the Fabric portal, sel
 
 Once configured, run the notebook cells to test the full pipeline:
 
-**1. Send a subscription event**
-
-Publish a JSON message to the **SubscriptionEventsStream** endpoint to create an alert subscription. For example:
-
-```json
-{
-  "timestamp": "2026-03-30T22:00:00Z",
-  "user_id": "user1",
-  "user_email": "user1@contoso.com",
-  "machine_id": "machine-42",
-  "state": "Stopped",
-  "duration_threshold_minutes": 5,
-  "action": "subscribe"
-}
-```
-
-This subscribes `user1` to be alerted when `machine-42` remains in the `Stopped` state for more than 5 minutes.
-
-**2. Send a machine state event**
-
-Publish a JSON message to the **MachineEventsStream** endpoint simulating the machine entering the subscribed state:
-
-```json
-{
-  "timestamp": "2026-03-30T22:01:00Z",
-  "machine_id": "machine-42",
-  "state": "Stopped"
-}
-```
-
-**3. Wait for the alert**
-
-The Activator polls the Eventhouse every 60 seconds. Once the machine has been in the `Stopped` state for longer than the configured duration (5 minutes in this example), the `is_breached` flag transitions to `true` and an email alert is sent to `user1@contoso.com`.
-
-### Running the Machine State Simulation
-
-```
-Location: Simulation / MachineStateSimulation
-Duration: 2 hours (configurable)
-Data Generated: State-change events for 1000 machines every 10 seconds
-```
-
-1. Open the **MachineStateSimulation** notebook
-2. Set the `EVENT_HUB_CONNECTION_STRING` to the connection string from the **MachineEventsStream** Custom Endpoint (found in the Fabric portal under the Eventstream item)
-3. Click **Run all**
-4. Monitor progress in the output — status is printed every 5 minutes
+1. **Send a subscription event** — run the subscription cell to create an alert subscription for a specific machine, state, user, and duration threshold
+2. **Send a machine state event** — run the machine event cell to simulate the subscribed machine entering that state
+3. **Wait for the alert** — the Activator polls the Eventhouse every 60 seconds. Once the machine has remained in the subscribed state beyond the configured duration, an email alert is sent to the subscribed user
 
 **Valid machine states**: Ready, Stopped, Optional Stop, Program Stopped, Interrupted, Feed Hold, Disabled, Communication Lost, Unavailable
+
+### Running the Bulk Simulation
+
+The same notebook also contains a bulk simulation cell that generates state-change events for 1,000 machines every 10 seconds over a configurable duration (default: 2 hours). Run this cell to load-test the pipeline.
 
 ### Verifying Data Flow
 
