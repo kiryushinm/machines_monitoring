@@ -186,6 +186,51 @@ After all Fabric items are deployed, open the **PostDeploymentConfig** notebook 
 
 ## Usage Instructions
 
+### Testing End-to-End Alerting
+
+To verify the full pipeline — from event ingestion through to alert delivery — follow these steps:
+
+**1. Get the Event Hub connection strings**
+
+Each Eventstream exposes a Custom Endpoint that accepts Event Hub–compatible messages. In the Fabric portal, open each Eventstream item and copy its connection string:
+
+- **MachineEventsStream** — receives machine state-change events
+- **SubscriptionEventsStream** — receives subscription events
+
+**2. Send a subscription event**
+
+Publish a JSON message to the **SubscriptionEventsStream** endpoint to create an alert subscription. For example:
+
+```json
+{
+  "timestamp": "2026-03-30T22:00:00Z",
+  "user_id": "user1",
+  "user_email": "user1@contoso.com",
+  "machine_id": "machine-42",
+  "state": "Stopped",
+  "duration_threshold_minutes": 5,
+  "action": "subscribe"
+}
+```
+
+This subscribes `user1` to be alerted when `machine-42` remains in the `Stopped` state for more than 5 minutes.
+
+**3. Send a machine state event**
+
+Publish a JSON message to the **MachineEventsStream** endpoint simulating the machine entering the subscribed state:
+
+```json
+{
+  "timestamp": "2026-03-30T22:01:00Z",
+  "machine_id": "machine-42",
+  "state": "Stopped"
+}
+```
+
+**4. Wait for the alert**
+
+The Activator polls the Eventhouse every 60 seconds. Once the machine has been in the `Stopped` state for longer than the configured duration (5 minutes in this example), the `is_breached` flag transitions to `true` and an email alert is sent to `user1@contoso.com`.
+
 ### Running the Machine State Simulation
 
 ```
