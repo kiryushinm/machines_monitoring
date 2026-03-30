@@ -18,6 +18,10 @@
 
 # CELL ********************
 
+%pip install fabric-launcher --quiet
+
+# CELL ********************
+
 import sempy.fabric as fabric
 
 client = fabric.FabricRestClient()
