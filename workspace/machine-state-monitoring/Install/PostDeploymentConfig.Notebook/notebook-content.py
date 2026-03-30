@@ -14,7 +14,7 @@
 # # Post-Deployment Configuration
 # 
 # Run this notebook after the Solution Installer has deployed all Fabric items.
-# It validates Eventhouse connectivity.
+# It patches placeholder IDs with real workspace-specific values and creates the Activator.
 
 # CELL ********************
 
@@ -32,34 +32,7 @@ print("Post-deployment configuration starting...")
 
 # MARKDOWN ********************
 
-# ## 1. Validate Eventhouse Connectivity
-
-# CELL ********************
-
-from fabric_launcher.post_deployment_utils import (
-    get_kusto_query_uri,
-    exec_kql_command,
-)
-
-eventhouse_name = "MachineMonitoringEH"
-kql_db_name = "MachineMonitoringEH"
-
-kusto_query_uri = get_kusto_query_uri(workspace_id, eventhouse_name, client)
-print(f"Eventhouse query URI: {kusto_query_uri}")
-
-# Verify tables exist
-result = exec_kql_command(
-    kusto_query_uri,
-    kql_db_name,
-    ".show tables | project TableName",
-    notebookutils,
-)
-print("Tables found:")
-print(result)
-
-# MARKDOWN ********************
-
-# ## 2. Patch KQL QuerySet with real database connection
+# ## 1. Patch KQL QuerySet with real database connection
 # 
 # The KQL QuerySet definition ships with placeholder IDs.
 # This step resolves the real KQL Database item ID and cluster URI,
@@ -131,7 +104,7 @@ else:
 
 # MARKDOWN ********************
 
-# ## 3. Create Activator with real database and QuerySet IDs
+# ## 2. Create Activator with real database and QuerySet IDs
 # 
 # The Activator (Reflex) is not deployed by fabric-launcher because its
 # definition requires real workspace-specific IDs that can't use placeholders.
