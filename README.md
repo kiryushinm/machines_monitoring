@@ -166,7 +166,7 @@ launcher.download_and_deploy(
     allow_non_empty_workspace=True,
     item_type_stages=[
         ["KQLDatabase", "Eventhouse"],
-        ["Notebook", "Eventstream"],
+        ["Notebook", "Eventstream", "KQLQueryset"],
         ["Reflex"]
     ],
     validate_after_deployment=True,

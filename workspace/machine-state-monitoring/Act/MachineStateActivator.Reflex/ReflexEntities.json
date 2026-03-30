@@ -19,14 +19,14 @@
         "queryString": "let machine_states = MachineStateEvents\n    | summarize arg_max(timestamp, state) by machine_id\n    | extend duration_min = datetime_diff('minute', now(), timestamp)\n    | project machine_id, current_state = state, duration_min;\nSubscriptionsState\n| where action == \"subscribe\"\n| join kind=leftouter machine_states on machine_id\n| extend is_breached = (current_state == state and duration_min >= duration_threshold_minutes)\n| project subscription_key, machine_id, state, current_state, duration_min, user_email, duration_threshold_minutes, is_breached"
       },
       "eventhouseItem": {
-        "itemId": "2906f9ac-34c3-4888-9e5d-8f57e6200409",
-        "workspaceId": "10369e6d-7c2d-4a0e-97aa-0f86a768cee3",
+        "itemId": "00000000-0000-0000-0000-000000000000",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
         "itemType": "KustoDatabase"
       },
       "metadata": {
-        "workspaceId": "10369e6d-7c2d-4a0e-97aa-0f86a768cee3",
-        "querySetId": "b39202c7-65e4-42f7-a13e-803f536a8d0b",
-        "queryId": "f3214ee5-b51c-40ab-bd42-971282d41e0e"
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "querySetId": "00000000-0000-0000-0000-000000000000",
+        "queryId": "00000000-0000-0000-0000-000000000000"
       },
       "parentContainer": {
         "targetUniqueIdentifier": "e8b90c63-1562-4610-962a-131dda6bbecd"
