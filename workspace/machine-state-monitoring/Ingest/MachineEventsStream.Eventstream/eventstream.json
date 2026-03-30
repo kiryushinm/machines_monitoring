@@ -14,9 +14,16 @@
       "type": "Eventhouse",
       "properties": {
         "dataIngestionMode": "ProcessedIngestion",
+        "databaseName": "MachineMonitoringEH",
         "workspaceId": "00000000-0000-0000-0000-000000000000",
         "itemId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-        "tableName": "MachineStateEvents"
+        "tableName": "MachineStateEvents",
+        "inputSerialization": {
+          "type": "Json",
+          "properties": {
+            "encoding": "UTF8"
+          }
+        }        
       },
       "inputNodes": [
         {
