@@ -125,7 +125,7 @@ The **ChangesTo** condition ensures each subscription is alerted only once when 
 
 ## Prerequisites
 
-- **Microsoft Fabric Capacity**: F16 or higher recommended
+- **Microsoft Fabric Capacity**: F2 or higher
 - **Fabric Workspace**: A workspace with contributor or admin permissions
 - Familiarity with Microsoft Fabric concepts (Eventhouses, Eventstreams) is helpful but not required
 
