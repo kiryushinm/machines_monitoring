@@ -127,6 +127,76 @@ else:
 
 # MARKDOWN ********************
 
+# ## 3. Patch Activator with real database and QuerySet IDs
+# 
+# The Activator (Reflex) definition ships with placeholder IDs for the
+# KQL Database and QuerySet. This step resolves the real IDs and patches
+# the Activator definition so it points to the deployed items.
+
+# CELL ********************
+
+activator_name = "MachineStateActivator"
+ZERO_GUID = "00000000-0000-0000-0000-000000000000"
+
+# Find the Reflex item
+reflex_resp = client.get(f"/v1/workspaces/{workspace_id}/items?type=Reflex")
+reflex_resp.raise_for_status()
+reflex_item = next(
+    (i for i in reflex_resp.json()["value"] if i["displayName"] == activator_name),
+    None,
+)
+
+if not reflex_item:
+    print(f"⚠️ Activator '{activator_name}' not found — skipping patch")
+elif not db_item or not queryset_item:
+    print("⚠️ KQL Database or QuerySet not found — skipping Activator patch")
+else:
+    reflex_id = reflex_item["id"]
+    print(f"Activator ID: {reflex_id}")
+
+    # Get current Reflex definition
+    def_resp = client.post(
+        f"/v1/workspaces/{workspace_id}/items/{reflex_id}/getDefinition"
+    )
+    def_resp.raise_for_status()
+    definition = def_resp.json()["definition"]
+
+    # Find and patch ReflexEntities.json
+    for part in definition["parts"]:
+        if part["path"] == "ReflexEntities.json":
+            content = json.loads(base64.b64decode(part["payload"]).decode("utf-8"))
+
+            # Patch eventhouseItem
+            source = content.get("source", {})
+            eh_item = source.get("eventhouseItem", {})
+            if eh_item.get("itemId") == ZERO_GUID:
+                eh_item["itemId"] = db_id
+            if eh_item.get("workspaceId") == ZERO_GUID:
+                eh_item["workspaceId"] = workspace_id
+
+            # Patch metadata
+            metadata = source.get("metadata", {})
+            if metadata.get("workspaceId") == ZERO_GUID:
+                metadata["workspaceId"] = workspace_id
+            if metadata.get("querySetId") == ZERO_GUID:
+                metadata["querySetId"] = queryset_id
+
+            part["payload"] = base64.b64encode(
+                json.dumps(content, indent=2).encode("utf-8")
+            ).decode("utf-8")
+            break
+
+    # Update the Reflex definition
+    update_body = {"definition": definition}
+    update_resp = client.post(
+        f"/v1/workspaces/{workspace_id}/items/{reflex_id}/updateDefinition",
+        json=update_body,
+    )
+    update_resp.raise_for_status()
+    print(f"✅ Activator patched — connected to DB '{kql_db_name}' and QuerySet '{queryset_name}'")
+
+# MARKDOWN ********************
+
 # ## Done
 # 
 # Post-deployment configuration is complete.
