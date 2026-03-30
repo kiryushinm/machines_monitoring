@@ -224,6 +224,17 @@ else:
     create_resp.raise_for_status()
     print(f"✅ Activator '{activator_name}' created with correct DB and QuerySet IDs")
 
+    # Move Activator to the Act folder
+    from fabric_launcher import move_item_to_folder
+    move_item_to_folder(
+        item_name=activator_name,
+        item_type="Reflex",
+        folder_name="Act",
+        workspace_id=workspace_id,
+        client=client,
+    )
+    print(f"✅ Activator moved to Act folder")
+
 # MARKDOWN ********************
 
 # ## Done
