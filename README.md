@@ -201,25 +201,6 @@ Once configured, run the notebook cells to test the full pipeline:
 2. **Send a machine state event** — run the machine event cell to simulate the subscribed machine entering that state
 3. **Wait for the alert** — the Activator polls the Eventhouse every 60 seconds. Once the machine has remained in the subscribed state beyond the configured duration, an email alert is sent to the subscribed user
 
-**Valid machine states**: Ready, Stopped, Optional Stop, Program Stopped, Interrupted, Feed Hold, Disabled, Communication Lost, Unavailable
-
-### Running the Bulk Simulation
-
-The same notebook also contains a bulk simulation cell that generates state-change events for 1,000 machines every 10 seconds over a configurable duration (default: 2 hours). Run this cell to load-test the pipeline.
-
-### Verifying Data Flow
-
-1. Navigate to **StoreAndQuery** → **MachineMonitoringEH** (Eventhouse)
-2. Open the KQL Database and run:
-
-```kql
-MachineStateEvents | take 10
-```
-
-3. Verify events are arriving with `timestamp`, `machine_id`, and `state` columns
-
-### Using the Activator
-
 The **MachineStateActivator** monitors all active subscriptions and sends alerts when machines exceed configured duration thresholds.
 
 Access: Navigate to **Act** → **MachineStateActivator**
@@ -228,3 +209,8 @@ The Activator is pre-configured to:
 - Poll the Eventhouse KQL database every 60 seconds
 - Fire when `is_breached` changes to `1` for any subscription
 - Send Email notifications to the subscribed user's email address with machine_id, state, and duration details
+
+### Running the Bulk Simulation
+
+The same notebook also contains a bulk simulation cell that generates state-change events for 1,000 machines every 10 seconds over a configurable duration (default: 2 hours). Run this cell to load-test the pipeline.
+
