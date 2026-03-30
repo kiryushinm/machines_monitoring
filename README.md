@@ -177,6 +177,16 @@ launcher.download_and_deploy(
 3. Run Cell 1 first, wait for the Python session to restart, then run Cell 2
 4. If the Eventhouse shows a "not available yet" error, wait 2–3 minutes and re-run Cell 2
 
+### Step 3: Run the Post-Deployment Configuration
+
+After all Fabric items are deployed, open the **PostDeploymentConfig** notebook (located in the **Install** folder) and run all cells sequentially. This notebook:
+
+1. **Validates Eventhouse connectivity** — confirms the KQL Database is reachable and tables exist
+2. **Patches the KQL QuerySet** — resolves the real KQL Database item ID and cluster URI, then updates the QuerySet definition so it connects to the deployed Eventhouse
+3. **Creates the Activator** — builds the MachineStateActivator (Reflex) via API with the correct workspace-specific IDs and moves it to the **Act** folder
+
+> **Note:** The Activator cannot be deployed by fabric-launcher because its definition requires real workspace-specific IDs that don't support placeholders. The post-deployment notebook creates it programmatically with the correct IDs.
+
 ## Usage Instructions
 
 ### Running the Machine State Simulation
@@ -215,5 +225,3 @@ The Activator is pre-configured to:
 - Poll the Eventhouse KQL database every 60 seconds
 - Fire when `is_breached` changes to `1` for any subscription
 - Send Email notifications to the subscribed user's email address with machine_id, state, and duration details
-
-> **Note:** After a fresh deployment, the Activator's Eventhouse connection (workspace and item IDs in `ReflexEntities.json`) may need to be reconfigured in the Fabric portal to point at the newly created Eventhouse.
