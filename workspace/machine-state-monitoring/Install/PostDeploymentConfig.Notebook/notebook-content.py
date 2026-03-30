@@ -70,6 +70,10 @@ print(result)
 import json, base64, time
 
 queryset_name = "SubscriptionsMonitoringKQL"
+eventhouse_name = "MachineMonitoringEH"
+kql_db_name = "MachineMonitoringEH"
+
+kusto_query_uri = get_kusto_query_uri(workspace_id, eventhouse_name, client)
 
 # Find the KQL QuerySet item in the workspace
 items_resp = client.get(f"/v1/workspaces/{workspace_id}/items?type=KQLQueryset")
