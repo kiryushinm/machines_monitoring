@@ -59,7 +59,87 @@ print(result)
 
 # MARKDOWN ********************
 
-# ## 2. Patch KQL QuerySet with real database connection
+# ## 2. Patch Eventstream destinations with real Eventhouse IDs
+# 
+# After deployment the Eventstream destinations may have placeholder or
+# unresolved IDs for the Eventhouse. This step fetches each Eventstream's
+# live definition, patches the destination with the real KQL Database ID
+# and workspace ID, and updates the definition to establish the connection.
+
+# CELL ********************
+
+import json, base64
+import sempy.fabric as fabric
+
+client = fabric.FabricRestClient()
+workspace_id = fabric.get_workspace_id()
+
+kql_db_name = "MachineMonitoringEH"
+
+# Get real KQL Database ID
+db_items_resp = client.get(f"/v1/workspaces/{workspace_id}/items?type=KQLDatabase")
+db_items_resp.raise_for_status()
+db_item = next(
+    (i for i in db_items_resp.json()["value"] if i["displayName"] == kql_db_name),
+    None,
+)
+if not db_item:
+    raise RuntimeError(f"KQL Database '{kql_db_name}' not found")
+db_id = db_item["id"]
+print(f"KQL Database ID: {db_id}")
+
+eventstreams = {
+    "MachineEventsStream": "MachineStateEvents",
+    "SubscriptionEventsStream": "UserSubscriptions",
+}
+
+es_items_resp = client.get(f"/v1/workspaces/{workspace_id}/items?type=Eventstream")
+es_items_resp.raise_for_status()
+
+for es_name, table_name in eventstreams.items():
+    es_item = next(
+        (i for i in es_items_resp.json()["value"] if i["displayName"] == es_name),
+        None,
+    )
+    if not es_item:
+        print(f"⚠️ Eventstream '{es_name}' not found — skipping")
+        continue
+
+    es_id = es_item["id"]
+    print(f"\nPatching {es_name} (ID: {es_id})...")
+
+    # Get current definition
+    def_resp = client.post(
+        f"/v1/workspaces/{workspace_id}/items/{es_id}/getDefinition"
+    )
+    def_resp.raise_for_status()
+    definition = def_resp.json()["definition"]
+
+    # Find and patch the eventstream.json part
+    for part in definition["parts"]:
+        if part["path"] == "eventstream.json":
+            content = json.loads(base64.b64decode(part["payload"]).decode("utf-8"))
+            for dest in content.get("destinations", []):
+                if dest.get("type") == "Eventhouse":
+                    dest["properties"]["workspaceId"] = workspace_id
+                    dest["properties"]["itemId"] = db_id
+                    print(f"  Destination patched: workspaceId={workspace_id}, itemId={db_id}, table={table_name}")
+            part["payload"] = base64.b64encode(
+                json.dumps(content, indent=2).encode("utf-8")
+            ).decode("utf-8")
+            break
+
+    # Update definition
+    update_resp = client.post(
+        f"/v1/workspaces/{workspace_id}/items/{es_id}/updateDefinition",
+        json={"definition": definition},
+    )
+    update_resp.raise_for_status()
+    print(f"  ✅ {es_name} updated")
+
+# MARKDOWN ********************
+
+# ## 3. Patch KQL QuerySet with real database connection
 # 
 # The KQL QuerySet definition ships with placeholder IDs.
 # This step resolves the real KQL Database item ID and cluster URI,
@@ -131,7 +211,7 @@ else:
 
 # MARKDOWN ********************
 
-# ## 3. Create Activator with real database and QuerySet IDs
+# ## 4. Create Activator with real database and QuerySet IDs
 # 
 # The Activator (Reflex) is not deployed by fabric-launcher because its
 # definition requires real workspace-specific IDs that can't use placeholders.
