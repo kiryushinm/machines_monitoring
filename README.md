@@ -188,16 +188,16 @@ After all Fabric items are deployed, open the **PostDeploymentConfig** notebook 
 
 ### Testing End-to-End Alerting
 
-To verify the full pipeline — from event ingestion through to alert delivery — follow these steps:
+Open the **MachineStateSimulation** notebook (located in the **Simulation** folder). Paste the Event Hub connection strings from each Eventstream's Custom Endpoint into the configuration cell:
 
-**1. Get the Event Hub connection strings**
+- `MACHINE_EVENTS_CONNECTION_STRING` — from **MachineEventsStream**
+- `SUBSCRIPTION_EVENTS_CONNECTION_STRING` — from **SubscriptionEventsStream**
 
-Each Eventstream exposes a Custom Endpoint that accepts Event Hub–compatible messages. In the Fabric portal, open each Eventstream item and copy its connection string:
+To find a connection string: open the Eventstream item in the Fabric portal, select the Custom Endpoint source, and copy the connection string.
 
-- **MachineEventsStream** — receives machine state-change events
-- **SubscriptionEventsStream** — receives subscription events
+Once configured, run the notebook cells to test the full pipeline:
 
-**2. Send a subscription event**
+**1. Send a subscription event**
 
 Publish a JSON message to the **SubscriptionEventsStream** endpoint to create an alert subscription. For example:
 
@@ -215,7 +215,7 @@ Publish a JSON message to the **SubscriptionEventsStream** endpoint to create an
 
 This subscribes `user1` to be alerted when `machine-42` remains in the `Stopped` state for more than 5 minutes.
 
-**3. Send a machine state event**
+**2. Send a machine state event**
 
 Publish a JSON message to the **MachineEventsStream** endpoint simulating the machine entering the subscribed state:
 
@@ -227,7 +227,7 @@ Publish a JSON message to the **MachineEventsStream** endpoint simulating the ma
 }
 ```
 
-**4. Wait for the alert**
+**3. Wait for the alert**
 
 The Activator polls the Eventhouse every 60 seconds. Once the machine has been in the `Stopped` state for longer than the configured duration (5 minutes in this example), the `is_breached` flag transitions to `true` and an email alert is sent to `user1@contoso.com`.
 
