@@ -184,8 +184,6 @@ After all Fabric items are deployed, open the **PostDeploymentConfig** notebook 
 1. **Patches the KQL QuerySet** — resolves the real KQL Database item ID and cluster URI, then updates the QuerySet definition so it connects to the deployed Eventhouse
 2. **Creates the Activator** — builds the MachineStateActivator (Reflex) via API with the correct workspace-specific IDs and moves it to the **Act** folder
 
-> **Note:** The Activator cannot be deployed by fabric-launcher because its definition requires real workspace-specific IDs that don't support placeholders. The post-deployment notebook creates it programmatically with the correct IDs.
-
 ## Usage Instructions
 
 ### Running the Machine State Simulation
