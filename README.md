@@ -214,3 +214,145 @@ The Activator is pre-configured to:
 
 The same notebook also contains a bulk simulation cell that generates state-change events for 1,000 machines every 10 seconds over a configurable duration (default: 2 hours). Run this cell to load-test the pipeline.
 
+## Extending the Solution: Alert Acknowledgement & Escalation
+
+This section describes how the existing implementation can be extended to support alert acknowledgement tracking and automatic escalation when alerts are not acknowledged within a configured time window.
+
+### Requirements
+
+1. **Alert record storage** — When the Activator fires an alert (email, Teams message), store a record of it.
+2. **Acknowledgement tracking** — Employees acknowledge alerts through a custom Teams UI (e.g., a button click). The acknowledgement is recorded against the original alert.
+3. **Automatic escalation** — If an acknowledgement is not received within 60 minutes of the breach starting, re-send the alert to a manager, VP, or other escalation contacts.
+
+### Design Approach
+
+The key insight is that the breach start time does not need to be tracked via state transitions on the `is_breached` column. It is **deterministic** from existing data:
+
+```
+breach_started_at = state_entered_at + duration_threshold_minutes
+```
+
+- `state_entered_at` is the timestamp of the most recent state-change event for the machine (already computed via `arg_max(timestamp, state)` on `MachineStateEvents`).
+- `duration_threshold_minutes` is the threshold configured in the subscription.
+
+This means the escalation query can compute breach timing purely from existing tables, join with a new acknowledgements table, and check whether 60 minutes have elapsed — all without persisting `is_breached` history.
+
+### Architecture
+
+```
+                                    ┌────────────────────────────────┐
+                                    │ Eventhouse (KQL DB)            │
+                                    │                                │
+                                    │  MachineStateEvents     (existing) │
+                                    │  UserSubscriptions      (existing) │
+                                    │  SubscriptionsState     (existing) │
+                                    │                                │
+┌──────────┐    ┌─────────────┐     │  Acknowledgements       (NEW)  │
+│ Teams UI │──▶│ Eventstream │──▶  │  EscalationConfig       (NEW)  │
+│ (ack btn)│    │ (acks)      │     │                                │
+└──────────┘    └─────────────┘     └──────────────┬─────────────────┘
+                                                   │ KQL poll
+                                    ┌──────────────▼─────────────────┐
+                                    │  EscalationActivator     (NEW) │
+                                    │  (unacked breach alerts)       │
+                                    └──────────────┬─────────────────┘
+                                                   ▼
+                                            Manager / VP alert
+```
+
+### New Eventhouse Schema
+
+#### Table: `Acknowledgements`
+
+Records acknowledgement events sent from the Teams custom UI.
+
+| Column             | Type     | Description                                      |
+|--------------------|----------|--------------------------------------------------|
+| `subscription_key` | string   | Matches the subscription that triggered the alert |
+| `ack_at`           | datetime | When the user acknowledged the alert             |
+
+A `subscription_key` uniquely identifies a subscription (`user_id|machine_id|state`). When an alert fires for a given `subscription_key`, the employee clicks the acknowledge button in Teams, which posts an event containing the `subscription_key` and current timestamp. This event is ingested into the `Acknowledgements` table via a new Eventstream with a Custom Endpoint.
+
+Because `is_breached` resets whenever the machine changes state, each breach cycle is implicitly scoped to the machine's current state stint. An acknowledgement for a previous breach does not suppress future alerts — once the machine leaves and re-enters the monitored state, a new breach cycle begins with no prior acknowledgement.
+
+#### Table: `EscalationConfig`
+
+Stores the escalation chain per user or subscription.
+
+| Column             | Type    | Description                                                  |
+|--------------------|---------|--------------------------------------------------------------|
+| `user_id`          | string  | The employee whose alerts may be escalated                   |
+| `escalation_contacts` | dynamic | Ordered JSON array of escalation contacts, e.g., `["manager@co.com", "vp@co.com"]` |
+
+Alternatively, escalation contacts can be added as a new column on the `UserSubscriptions` table if escalation chains vary per subscription rather than per user.
+
+### Escalation Activator
+
+A second Activator (`EscalationActivator`) polls the Eventhouse every 60 seconds with the following query:
+
+```kql
+let machine_states = MachineStateEvents
+    | summarize arg_max(timestamp, state) by machine_id
+    | project machine_id, current_state = state, state_entered_at = timestamp;
+let active_breaches = SubscriptionsState
+    | where action == "subscribe"
+    | join kind=inner machine_states on machine_id
+    | where current_state == state
+    | extend breach_started_at = state_entered_at + duration_threshold_minutes * 1m
+    | where now() >= breach_started_at;
+let unacked_breaches = active_breaches
+    | join kind=leftanti Acknowledgements on subscription_key;
+let with_escalation = unacked_breaches
+    | join kind=leftouter EscalationConfig on user_id;
+with_escalation
+| extend minutes_since_breach = datetime_diff('minute', now(), breach_started_at)
+| extend needs_escalation = (minutes_since_breach >= 60)
+| project subscription_key, machine_id, state, user_email,
+         breach_started_at, minutes_since_breach,
+         escalation_contacts, needs_escalation
+```
+
+#### How the Query Works
+
+1. **`machine_states`** — Same as the existing Activator query: computes the latest state and when each machine entered it.
+2. **`active_breaches`** — Joins active subscriptions with machine states, computes `breach_started_at` as `state_entered_at + duration_threshold_minutes`, and filters to currently breached subscriptions.
+3. **`unacked_breaches`** — Uses a `leftanti` join against `Acknowledgements` to keep only breaches that have not been acknowledged. When an employee clicks the acknowledge button, their `subscription_key` appears in the `Acknowledgements` table, and the `leftanti` join removes it from the escalation pipeline.
+4. **`with_escalation`** — Joins escalation contact configuration so the Activator knows who to notify.
+5. **Final projection** — Computes `minutes_since_breach` and a boolean `needs_escalation` flag.
+
+#### Trigger Configuration
+
+| Setting        | Value                                                                 |
+|----------------|-----------------------------------------------------------------------|
+| **Object ID**  | `subscription_key`                                                    |
+| **Condition**  | **ChangesTo 1** — monitors `needs_escalation`, fires when the value changes to `1` per object |
+| **Action**     | Send Email / Teams notification to `escalation_contacts` with `machine_id`, `state`, `minutes_since_breach` |
+
+The **ChangesTo** condition works the same way as the existing Activator: it fires once when `needs_escalation` transitions from `false` to `true` for a given `subscription_key`. The condition resets when the machine changes state (breach disappears) or when the employee acknowledges (row removed by `leftanti` join).
+
+### New Fabric Items Summary
+
+| Item                      | Type         | Purpose                                              |
+|---------------------------|--------------|-------------------------------------------------------|
+| `Acknowledgements`        | KQL Table    | Stores acknowledgement events from the Teams UI       |
+| `EscalationConfig`        | KQL Table    | Escalation contact chain per user                     |
+| `AcknowledgementStream`   | Eventstream  | Ingests acknowledgement button clicks via Custom Endpoint |
+| `EscalationActivator`     | Activator    | Polls for unacknowledged breaches and escalates       |
+
+### Multi-Level Escalation
+
+For multi-level escalation (e.g., manager at 60 min, VP at 120 min, director at 180 min), the query can be extended to compute the current escalation tier:
+
+```kql
+| extend escalation_tier = case(
+    minutes_since_breach >= 180, 2,  // director
+    minutes_since_breach >= 120, 1,  // VP
+    minutes_since_breach >= 60,  0,  // manager
+    -1)                              // no escalation
+| where escalation_tier >= 0
+| extend escalation_target = escalation_contacts[escalation_tier]
+| extend needs_escalation = true
+```
+
+Using `escalation_tier` as part of the Activator object ID (e.g., `strcat(subscription_key, '|', escalation_tier)`) ensures each escalation level triggers independently via the **ChangesTo** condition.
+
