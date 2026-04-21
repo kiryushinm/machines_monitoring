@@ -220,9 +220,8 @@ This section describes how the existing implementation can be extended to suppor
 
 ### Requirements
 
-1. **Alert record storage** — When the Activator fires an alert (email, Teams message), store a record of it.
-2. **Acknowledgement tracking** — Employees acknowledge alerts through a custom Teams UI (e.g., a button click). The acknowledgement is recorded against the original alert.
-3. **Automatic escalation** — If an acknowledgement is not received within 60 minutes of the breach starting, re-send the alert to a manager, VP, or other escalation contacts.
+1. **Acknowledgement tracking** — Employees acknowledge alerts through a custom Teams UI (e.g., a button click). The acknowledgement is recorded against the original alert.
+2. **Automatic escalation** — If an acknowledgement is not received within 60 minutes of the breach starting, re-send the alert to a manager, VP, or other escalation contacts.
 
 ### Design Approach
 
@@ -300,8 +299,12 @@ let active_breaches = SubscriptionsState
     | where current_state == state
     | extend breach_started_at = state_entered_at + duration_threshold_minutes * 1m
     | where now() >= breach_started_at;
+let valid_acks = active_breaches
+    | join kind=inner Acknowledgements on subscription_key
+    | where acked_at >= breach_started_at
+    | distinct subscription_key;
 let unacked_breaches = active_breaches
-    | join kind=leftanti Acknowledgements on subscription_key;
+    | where subscription_key !in (valid_acks);
 let with_escalation = unacked_breaches
     | join kind=leftouter EscalationConfig on user_id;
 with_escalation
@@ -316,9 +319,10 @@ with_escalation
 
 1. **`machine_states`** — Same as the existing Activator query: computes the latest state and when each machine entered it.
 2. **`active_breaches`** — Joins active subscriptions with machine states, computes `breach_started_at` as `state_entered_at + duration_threshold_minutes`, and filters to currently breached subscriptions.
-3. **`unacked_breaches`** — Uses a `leftanti` join against `Acknowledgements` to keep only breaches that have not been acknowledged. When an employee clicks the acknowledge button, their `subscription_key` appears in the `Acknowledgements` table, and the `leftanti` join removes it from the escalation pipeline.
-4. **`with_escalation`** — Joins escalation contact configuration so the Activator knows who to notify.
-5. **Final projection** — Computes `minutes_since_breach` and a boolean `needs_escalation` flag.
+3. **`valid_acks`** — Joins active breaches with `Acknowledgements` on `subscription_key` and filters to only acknowledgements that occurred **after** the current breach started (`acked_at >= breach_started_at`). This ensures that acknowledgements from previous breach cycles are ignored.
+4. **`unacked_breaches`** — Keeps only active breaches whose `subscription_key` does not appear in `valid_acks`, i.e., breaches that have not been acknowledged during the current breach cycle.
+5. **`with_escalation`** — Joins escalation contact configuration so the Activator knows who to notify.
+6. **Final projection** — Computes `minutes_since_breach` and a boolean `needs_escalation` flag.
 
 #### Trigger Configuration
 
@@ -328,7 +332,7 @@ with_escalation
 | **Condition**  | **ChangesTo 1** — monitors `needs_escalation`, fires when the value changes to `1` per object |
 | **Action**     | Send Email / Teams notification to `escalation_contacts` with `machine_id`, `state`, `minutes_since_breach` |
 
-The **ChangesTo** condition works the same way as the existing Activator: it fires once when `needs_escalation` transitions from `false` to `true` for a given `subscription_key`. The condition resets when the machine changes state (breach disappears) or when the employee acknowledges (row removed by `leftanti` join).
+The **ChangesTo** condition works the same way as the existing Activator: it fires once when `needs_escalation` transitions from `false` to `true` for a given `subscription_key`. The condition resets when the machine changes state (breach disappears) or when the employee acknowledges (row filtered out by the `valid_acks` check).
 
 ### New Fabric Items Summary
 
@@ -338,21 +342,3 @@ The **ChangesTo** condition works the same way as the existing Activator: it fir
 | `EscalationConfig`        | KQL Table    | Escalation contact chain per user                     |
 | `AcknowledgementStream`   | Eventstream  | Ingests acknowledgement button clicks via Custom Endpoint |
 | `EscalationActivator`     | Activator    | Polls for unacknowledged breaches and escalates       |
-
-### Multi-Level Escalation
-
-For multi-level escalation (e.g., manager at 60 min, VP at 120 min, director at 180 min), the query can be extended to compute the current escalation tier:
-
-```kql
-| extend escalation_tier = case(
-    minutes_since_breach >= 180, 2,  // director
-    minutes_since_breach >= 120, 1,  // VP
-    minutes_since_breach >= 60,  0,  // manager
-    -1)                              // no escalation
-| where escalation_tier >= 0
-| extend escalation_target = escalation_contacts[escalation_tier]
-| extend needs_escalation = true
-```
-
-Using `escalation_tier` as part of the Activator object ID (e.g., `strcat(subscription_key, '|', escalation_tier)`) ensures each escalation level triggers independently via the **ChangesTo** condition.
-
