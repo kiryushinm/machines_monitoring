@@ -42,6 +42,21 @@ print("Post-deployment configuration starting...")
 
 import json, base64, time
 
+def get_kusto_query_uri(workspace_id, eventhouse_name, client):
+    """Resolve the Kusto query service URI for an Eventhouse by name."""
+    items_resp = client.get(f"/v1/workspaces/{workspace_id}/items?type=Eventhouse")
+    items_resp.raise_for_status()
+    eh_item = next(
+        (i for i in items_resp.json()["value"] if i["displayName"] == eventhouse_name),
+        None,
+    )
+    if not eh_item:
+        raise ValueError(f"Eventhouse '{eventhouse_name}' not found in workspace")
+    eh_id = eh_item["id"]
+    props_resp = client.get(f"/v1/workspaces/{workspace_id}/eventhouses/{eh_id}")
+    props_resp.raise_for_status()
+    return props_resp.json()["properties"]["queryServiceUri"]
+
 queryset_name = "SubscriptionsMonitoringKQL"
 eventhouse_name = "MachineMonitoringEH"
 kql_db_name = "MachineMonitoringEH"
