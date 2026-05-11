@@ -159,8 +159,8 @@ launcher = FabricLauncher(
 )
 
 launcher.download_and_deploy(
-    repo_owner="makiryus_microsoft",
-    repo_name="machines_state_monitoring",
+    repo_owner="kiryushinm",
+    repo_name="machines_monitoring",
     branch="main",
     workspace_folder="workspace",
     allow_non_empty_workspace=True,
@@ -169,8 +169,7 @@ launcher.download_and_deploy(
         ["Notebook", "Eventstream", "KQLQueryset"]
     ],
     validate_after_deployment=True,
-    generate_report=True,
-    github_token="<YOUR_GITHUB_PAT>"  # Required for private repos; remove for public repos
+    generate_report=True
 )
 ```
 
